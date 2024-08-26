@@ -24,6 +24,7 @@ import dbConnection from "./config/dbConnection.js"
 
 // connection from database (to-do)
 dbConnection.sync().then(()=>{
+    console.log("Database connected");
     app.listen(PORT, () => {
         console.log(`Servidor online http://localhost:${PORT}`);
     });
