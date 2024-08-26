@@ -4,19 +4,23 @@ import cors from "cors";
 
 const PORT = process.env.PORT || 3333
 
-// import connection from database (to-do)
-import dbConnection from "./config/dbConnection.js"
+
 
 const app = express();
 
 //rotas
 import tarefaRouter from "./routes/tarefaRouter.js";
 
+//models
+import models from "./models/tarefaModel.js"
+
 //3 middlewares
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// import connection from database (to-do)
+import dbConnection from "./config/dbConnection.js"
 
 // connection from database (to-do)
 dbConnection.sync().then(()=>{
