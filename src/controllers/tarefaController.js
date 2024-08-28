@@ -1,4 +1,5 @@
 import Tarefa from "../models/tarefaModel.js";
+import { validationResult } from 'express-validator';
 
 //Query (optional) - Params (mandatory)
 //tasks?page=1&limit=10
@@ -52,3 +53,26 @@ export const getPost = async (req, res) => {
         res.status(500).json({ error: "Failed to create task" });
     }
 };
+
+
+export const getTarefaID = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { id } = req.params;
+    const tarefa = await Tarefa.findOne({ where: { id } });
+
+    if (!tarefa) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    res.status(200).json(tarefa);
+  } catch (error) {
+    console.error("Error in retrieving task by ID:", error);
+    res.status(500).json({ error: "Failed to find task" });
+  }
+};
+
