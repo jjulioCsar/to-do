@@ -111,3 +111,27 @@ export const updateTarefa = async (req, res) => {
     res.status(500).json({ error: "Failed to update task" });
   }
 };
+
+export const  updateStatusTarefa = async (req, res) => {
+  const { id } = req.params;
+  
+  try{
+    const tarefa = await Tarefa.findOne({ raw: true, where: { id } });
+    if(tarefa === null){
+      return res.status(404).json({ error: "Task not found" });
+    }
+    if(tarefa.status === "pendente"){
+      await Tarefa.update({ status: "concluída" }, { where: { id } });
+    }else if(tarefa.status === "concluída"){
+      await Tarefa.update({ status: "pendente" }, { where: { id } });
+    }
+    
+    const taskAtualizada = await Tarefa.findOne({ raw: true, where: { id } });
+    res.status(200).json(taskAtualizada);
+    } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to find task" });
+    return;
+    }
+
+}
