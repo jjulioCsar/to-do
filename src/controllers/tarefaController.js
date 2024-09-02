@@ -1,12 +1,36 @@
 import Tarefa from "../models/tarefaModel.js";
 import { validationResult } from "express-validator";
+import {z} from "zod";
+
+import formatZodError from "../helpers/zodError.js";
 
 //Query (optional) - Params (mandatory)
 //tasks?page=1&limit=10
 //req.params.limit --> to retrieve all registered items, must be changed
 
+//validações com ZOD
+//validação post
+const createSchema = z.object({
+  tarefa: z.string().min(3, {msg: "A tarefa deve ter pelo menos 3 caracteres"}).transform((txt) =>txt.toLowerCase()),
+  descricao: z.string().min(10, {msg: "A descricao deve ter pelo menos 10 caracteres"}),
+})
+//validação get
+const getSchemaID = z.object({
+  id: z.string().uuid(),
+})
+//validação do update
+const updateSchema = z.object({
+  tarefa: z.string().min(3, {msg: "A tarefa deve ter pelo menos 3 caracteres"}).transform((txt) => txt.toLowerCase()),
+  descricao: z.string().min(10, {msg: "A descricao deve ter pelo menos 10 caracteres"}),
+  status: z.enum(["pendente", "concluída"]),
+})
+const paramsSchema = z.object({
+  id: z.string().uuid(),
+})
+
 //puxar tarefas
 export const getTarefas = async (req, res) => {
+
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
@@ -32,36 +56,48 @@ export const getTarefas = async (req, res) => {
   }
 };
 
-//postar tarefa
+// Postar tarefa
 export const postTarefa = async (req, res) => {
+  const bodyValidation = createSchema.safeParse(req.body);
+  if (!bodyValidation.success) {
+    return res.status(400).json({ 
+      msg: "Os dados recebidos do corpo da requisição são inválidos", 
+      detalhes: formatZodError (bodyValidation.error) 
+    });
+  }
+
   const { tarefa, descricao } = req.body;
   const status = "pendente";
 
+  // Validação dos campos obrigatórios
   if (!tarefa) {
-    res.status(404).json({ error: "task is mandatory" });
-    return;
+    return res.status(400).json({ error: "Task is mandatory" });
   }
   if (!descricao) {
-    res.status(404).json({ error: "description is mandatory" });
-    return;
+    return res.status(400).json({ error: "Description is mandatory" });
   }
 
-  const newTask = {
-    tarefa,
-    descricao,
-    status,
-  };
+  const newTask = { tarefa, descricao, status };
+
   try {
+    // Criação da nova tarefa
     await Tarefa.create(newTask);
-    res.status(201).json(newTask);
+    return res.status(201).json(newTask);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create task" });
+    console.error("Error creating task:", error);
+    return res.status(500).json({ error: "Failed to create task" });
   }
 };
 
 //puxar tarefa por ID
 export const getTarefaID = async (req, res) => {
+  const bodyValidation = getSchemaID.safeParse(req.params);
+  if (!bodyValidation.success) {
+    return res.status(400).json({ 
+      msg: "Os dados recebidos do corpo da requisição são inválidos", 
+      detalhes: formatZodError (bodyValidation.error) 
+    });
+  }
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -84,6 +120,22 @@ export const getTarefaID = async (req, res) => {
 
 //atualizar tarefa por ID
 export const updateTarefa = async (req, res) => {
+  
+const bodyValidation = updateSchema.safeParse(req.body);
+if (!bodyValidation.success) {
+  return res.status(400).json({ 
+    msg: "Os dados recebidos do corpo da requisição são inválidos", 
+    detalhes: formatZodError(bodyValidation.error) 
+  });
+}
+const paramsValidation = paramsSchema.safeParse(req.params);
+if (!paramsValidation.success) {
+  return res.status(400).json({ 
+    msg: "Os dados recebidos na URL são inválidos", 
+    detalhes: formatZodError(paramsValidation.error) 
+  });
+} 
+
   const { id } = req.params;
   const { tarefa, descricao, status } = req.body;
 
