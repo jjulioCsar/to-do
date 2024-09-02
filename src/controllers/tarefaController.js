@@ -4,6 +4,8 @@ import { validationResult } from "express-validator";
 //Query (optional) - Params (mandatory)
 //tasks?page=1&limit=10
 //req.params.limit --> to retrieve all registered items, must be changed
+
+//puxar tarefas
 export const getTarefas = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -30,7 +32,8 @@ export const getTarefas = async (req, res) => {
   }
 };
 
-export const getPost = async (req, res) => {
+//postar tarefa
+export const postTarefa = async (req, res) => {
   const { tarefa, descricao } = req.body;
   const status = "pendente";
 
@@ -57,6 +60,7 @@ export const getPost = async (req, res) => {
   }
 };
 
+//puxar tarefa por ID
 export const getTarefaID = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -78,6 +82,7 @@ export const getTarefaID = async (req, res) => {
   }
 };
 
+//atualizar tarefa por ID
 export const updateTarefa = async (req, res) => {
   const { id } = req.params;
   const { tarefa, descricao, status } = req.body;
@@ -112,6 +117,7 @@ export const updateTarefa = async (req, res) => {
   }
 };
 
+//atualizar status de tarefa por id
 export const  updateStatusTarefa = async (req, res) => {
   const { id } = req.params;
   
@@ -134,4 +140,21 @@ export const  updateStatusTarefa = async (req, res) => {
     return;
     }
 
-}
+};
+
+//buscar tarefas por status
+export const buscarTarefaPorSituacao = async (req, res) => {
+  const { situacao } = req.params;
+
+  if (situacao !== "pendente" && situacao !== "concluída") {
+    return res.status(400).json({ error: "Invalid situation, use 'pendente' or 'concluída'" });
+  }
+
+  try {
+    const tasks = await Tarefa.findAll({ where: { status: situacao }, raw: true });
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Error finding tasks by situation:", error);
+    res.status(500).json({ error: "Failed to find tasks" });
+  }
+};
